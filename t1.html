@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>CampusGIG – Browse Gigs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --brand: #5b5ef4;
+            --brand-soft: #eeeeff;
+            --brand-d: #4345c9;
+            --text: #111827;
+            --sub: #6b7280;
+            --muted: #9ca3af;
+            --border: #e5e7eb;
+            --bg: #f9fafb;
+            --white: #fff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f3f4f6;
+            margin: 0
+        }
+
+        /* chrome */
+        .chrome {
+            background: #e8e8ed;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #d1d1d6
+        }
+
+        .dots {
+            display: flex;
+            gap: 6px
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%
+        }
+
+        .dot.r {
+            background: #ff5f57
+        }
+
+        .dot.y {
+            background: #febc2e
+        }
+
+        .dot.g {
+            background: #28c840
+        }
+
+        .addr {
+            flex: 1;
+            background: #fff;
+            border: 1px solid #d1d1d6;
+            border-radius: 7px;
+            padding: 4px 14px;
+            font-size: 11.5px;
+            color: #444;
+            text-align: center
+        }
+
+        /* shell */
+        .shell {
+            display: flex;
+            height: calc(100vh - 40px);
+            min-height: 700px
+        }
+
+        /* ── sidebar ── */
+        .sidebar {
+            width: 220px;
+            flex-shrink: 0;
+            background: var(--white);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column
+        }
+
+        .sb-top {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .logo-box {
+            width: 30px;
+            height: 30px;
+            background: var(--brand);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .logo-box svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: #fff;
+            stroke-width: 2.2;
+            stroke-linecap: round
+        }
+
+        .logo-txt {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text)
+        }
+
+        .logo-txt em {
+            font-style: normal;
+            color: var(--brand)
+        }
+
+        .sb-user {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 9px
+        }
+
+        .av {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0
+        }
+
+        .u-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.3
+        }
+
+        .u-meta {
+            font-size: 11px;
+            color: var(--muted)
+        }
+
+        .u-status {
+            display: inline-block;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 5px;
+            padding: 1px 7px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #15803d;
+            margin-top: 2px
+        }
+
+        .sb-nav {
+            padding: 12px 8px;
+            flex: 1
+        }
+
+        .ns {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            padding: 0 10px;
+            margin: 10px 0 5px
+        }
+
+        .ni {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 10px;
+            border-radius: 9px;
+            font-size: 13px;
+            color: var(--sub);
+            cursor: pointer;
+            margin-bottom: 2px;
+            font-weight: 400
+        }
+
+        .ni.a {
+            background: var(--brand-soft);
+            color: var(--brand);
+            font-weight: 600
+        }
+
+        .ni .ic {
+            font-size: 15px;
+            width: 20px;
+            text-align: center
+        }
+
+        .ni .cnt {
+            margin-left: auto;
+            background: #ef4444;
+            color: #fff;
+            border-radius: 10px;
+            padding: 1px 6px;
+            font-size: 10px;
+            font-weight: 700
+        }
+
+        .sb-promo {
+            margin: 12px 10px;
+            background: linear-gradient(135deg, #1a1a2e, #0f3460);
+            border-radius: 12px;
+            padding: 14px;
+            position: relative;
+            overflow: hidden
+        }
+
+        .sp-glow {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(91, 94, 244, 0.4);
+            filter: blur(30px);
+            top: -20px;
+            right: -20px
+        }
+
+        .sp-txt {
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            position: relative;
+            margin-bottom: 4px
+        }
+
+        .sp-sub {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            position: relative;
+            line-height: 1.4
+        }
+
+        /* ── main ── */
+        .main {
+            flex: 1;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden
+        }
+
+        /* header banner */
+        .banner {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+            padding: 20px 28px 18px;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .banner-glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            pointer-events: none
+        }
+
+        .bg1 {
+            width: 300px;
+            height: 300px;
+            background: rgba(91, 94, 244, 0.35);
+            top: -100px;
+            right: -60px
+        }
+
+        .bg2 {
+            width: 200px;
+            height: 200px;
+            background: rgba(34, 197, 94, 0.2);
+            bottom: -60px;
+            left: 200px
+        }
+
+        .banner-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            position: relative;
+            z-index: 2
+        }
+
+        .banner-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px
+        }
+
+        .banner-sub {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.55)
+        }
+
+        .banner-actions {
+            display: flex;
+            gap: 8px
+        }
+
+        .ba-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 9px;
+            padding: 7px 14px;
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            backdrop-filter: blur(8px)
+        }
+
+        .ba-btn.pri {
+            background: var(--brand);
+            border-color: var(--brand);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(91, 94, 244, 0.4)
+        }
+
+        /* stats strip */
+        .stats {
+            display: flex;
+            gap: 8px;
+            position: relative;
+            z-index: 2
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 10px 16px;
+            backdrop-filter: blur(8px)
+        }
+
+        .stat-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+            line-height: 1
+        }
+
+        .stat-lbl {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.45);
+            margin-top: 3px
+        }
+
+        /* filter bar */
+        .filterbar {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0
+        }
+
+        .search {
+            flex: 1;
+            max-width: 320px;
+            position: relative
+        }
+
+        .search input {
+            width: 100%;
+            border: 1.5px solid var(--border);
+            border-radius: 9px;
+            padding: 8px 14px 8px 36px;
+            font-size: 13px;
+            color: var(--text);
+            background: #fafafa;
+            font-family: 'Inter', sans-serif;
+            outline: none
+        }
+
+        .search::before {
+            content: '🔍';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap
+        }
+
+        .fp {
+            background: var(--bg);
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 12.5px;
+            color: var(--sub);
+            cursor: pointer;
+            font-weight: 500
+        }
+
+        .fp.act {
+            background: var(--brand-soft);
+            border-color: #c7c9fa;
+            color: var(--brand);
+            font-weight: 600
+        }
+
+        .sort-select {
+            margin-left: auto;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12.5px;
+            color: var(--sub);
+            background: #fafafa;
+            font-family: 'Inter', sans-serif;
+            outline: none
+        }
+
+        /* gig list */
+        .gig-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 28px
+        }
+
+        .result-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px
+        }
+
+        .result-txt {
+            font-size: 13px;
+            color: var(--sub)
+        }
+
+        .result-txt strong {
+            color: var(--text);
+            font-weight: 600
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 4px
+        }
+
+        .vt {
+            width: 28px;
+            height: 28px;
+            border: 1.5px solid var(--border);
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            cursor: pointer;
+            background: var(--white)
+        }
+
+        .vt.act {
+            background: var(--brand-soft);
+            border-color: #c7c9fa
+        }
+
+        /* gig card */
+        .gc {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .gc:hover {
+            border-color: #c7c9fa;
+            box-shadow: 0 4px 16px rgba(91, 94, 244, 0.08)
+        }
+
+        .gc-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            border: 1px solid rgba(0, 0, 0, 0.05)
+        }
+
+        .gc-body {
+            flex: 1;
+            min-width: 0
+        }
+
+        .gc-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px
+        }
+
+        .gc-title {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.2px
+        }
+
+        .gc-budget {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--brand);
+            letter-spacing: -0.3px;
+            white-space: nowrap
+        }
+
+        .gc-desc {
+            font-size: 12.5px;
+            color: var(--sub);
+            line-height: 1.6;
+            margin-bottom: 12px
+        }
+
+        .gc-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border-radius: 7px;
+            padding: 3px 10px;
+            font-size: 11.5px;
+            font-weight: 600
+        }
+
+        .p-cat {
+            background: #f0f0ff;
+            color: #5856d6
+        }
+
+        .p-open {
+            background: #f0fdf4;
+            color: #15803d
+        }
+
+        .p-dl {
+            background: #fff7ed;
+            color: #c2410c
+        }
+
+        .p-apps {
+            background: #f9fafb;
+            color: #6b7280;
+            border: 1px solid #e5e7eb
+        }
+
+        .gc-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            flex-shrink: 0
+        }
+
+        .btn-apply {
+            background: var(--brand);
+            color: #fff;
+            border: none;
+            border-radius: 9px;
+            padding: 9px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(91, 94, 244, 0.3);
+        }
+
+        .poster-info {
+            text-align: right
+        }
+
+        .poster-name {
+            font-size: 12px;
+            color: var(--sub);
+            font-weight: 500
+        }
+
+        .stars {
+            color: #f59e0b;
+            font-size: 12px;
+            letter-spacing: 1px
+        }
+
+        .rval {
+            font-size: 11.5px;
+            color: var(--muted)
+        }
+
+        .poster-av {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            margin-left: auto;
+            margin-bottom: 4px
+        }
+
+        /* pagination */
+        .pgn {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 0
+        }
+
+        .pb {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1.5px solid var(--border);
+            background: var(--white);
+            color: var(--sub);
+            cursor: pointer
+        }
+
+        .pb.act {
+            background: var(--brand);
+            color: #fff;
+            border-color: var(--brand)
+        }
+
+        /* devbar */
+        .devbar {
+            background: #111827;
+            padding: 6px 24px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 22px
+        }
+
+        .d-ok {
+            font-size: 11px;
+            color: #4ade80;
+            font-weight: 600;
+            font-family: 'SF Mono', 'Menlo', monospace
+        }
+
+        .d-t {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.25);
+            font-family: 'SF Mono', 'Menlo', monospace
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chrome">
+        <div class="dots">
+            <div class="dot r"></div>
+            <div class="dot y"></div>
+            <div class="dot g"></div>
+        </div>
+        <div class="addr">🔒 campus-gig.app/student/gigs</div>
+    </div>
+
+    <div class="shell">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sb-top">
+                <div class="logo">
+                    <div class="logo-box"><svg viewBox="0 0 20 20">
+                            <path d="M10 2L3 7v11h5v-5h4v5h5V7z" stroke-linejoin="round" />
+                        </svg></div>
+                    <span class="logo-txt">Campus<em>GIG</em></span>
+                </div>
+            </div>
+            <div class="sb-user">
+                <div class="av">AS</div>
+                <div>
+                    <div class="u-name">Arjun Sharma</div>
+                    <div class="u-status">✓ Approved</div>
+                </div>
+            </div>
+            <div class="sb-nav">
+                <div class="ns">Student</div>
+                <div class="ni"><span class="ic">🏠</span> Dashboard</div>
+                <div class="ni a"><span class="ic">🔍</span> Browse Gigs</div>
+                <div class="ni"><span class="ic">📄</span> My Applications <span class="cnt">2</span></div>
+                <div class="ni"><span class="ic">🎨</span> Portfolio</div>
+                <div class="ni"><span class="ic">⭐</span> My Ratings</div>
+                <div class="ns">Filters</div>
+                <div class="ni"><span class="ic">🎨</span> Design</div>
+                <div class="ni"><span class="ic">💻</span> Development</div>
+                <div class="ni"><span class="ic">📝</span> Content</div>
+                <div class="ni"><span class="ic">📊</span> Data & Analysis</div>
+                <div class="ni"><span class="ic">🎥</span> Media & Video</div>
+            </div>
+            <div class="sb-promo">
+                <div class="sp-glow"></div>
+                <div class="sp-txt">🚀 Profile 60% complete</div>
+                <div class="sp-sub">Add skills to get 3× more visibility from clients</div>
+            </div>
+        </div>
+
+        <!-- MAIN -->
+        <div class="main">
+            <!-- BANNER -->
+            <div class="banner">
+                <div class="banner-glow bg1"></div>
+                <div class="banner-glow bg2"></div>
+                <div class="banner-top">
+                    <div>
+                        <div class="banner-title">Browse Gigs — GRIET</div>
+                        <div class="banner-sub">Open opportunities posted by faculty &amp; clients at your college</div>
+                    </div>
+                    <div class="banner-actions">
+                        <button class="ba-btn">🔔 Set alerts</button>
+                        <button class="ba-btn pri">Update skills →</button>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-val">4</div>
+                        <div class="stat-lbl">Open Gigs</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-val">₹9,600</div>
+                        <div class="stat-lbl">Total Budget Pool</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-val">12</div>
+                        <div class="stat-lbl">Active Students</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-val">2</div>
+                        <div class="stat-lbl">My Applications</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILTERS -->
+            <div class="filterbar">
+                <div class="search"><input type="text" placeholder="Search gigs, skills, categories…" value="" /></div>
+                <div class="filter-group">
+                    <span class="fp act">All</span>
+                    <span class="fp">Design</span>
+                    <span class="fp">Development</span>
+                    <span class="fp">Content</span>
+                    <span class="fp">Data</span>
+                </div>
+                <select class="sort-select">
+                    <option>Latest First</option>
+                    <option>Budget: High → Low</option>
+                    <option>Deadline: Soon</option>
+                </select>
+            </div>
+
+            <!-- GIG LIST -->
+            <div class="gig-area">
+                <div class="result-row">
+                    <div class="result-txt">Showing <strong>4 open gigs</strong> for GRIET students</div>
+                    <div class="view-toggle">
+                        <div class="vt act">☰</div>
+                        <div class="vt">⊞</div>
+                    </div>
+                </div>
+
+                <!-- Card 1 -->
+                <div class="gc">
+                    <div class="gc-icon" style="background:#f0f0ff;border-color:#e0e0ff">🎨</div>
+                    <div class="gc-body">
+                        <div class="gc-top">
+                            <div class="gc-title">Design a Logo for Robotics Club</div>
+                            <div class="gc-budget">₹1,500</div>
+                        </div>
+                        <div class="gc-desc">Modern, professional logo for the GRIET Robotics Club. Deliver SVG + PNG.
+                            Include 3 distinct initial concepts reflecting innovation and engineering.</div>
+                        <div class="gc-meta">
+                            <span class="pill p-cat">🎨 Design &amp; Graphics</span>
+                            <span class="pill p-open">● Open</span>
+                            <span class="pill p-dl">📅 30 May 2025</span>
+                            <span class="pill p-apps">👥 7 applicants</span>
+                        </div>
+                    </div>
+                    <div class="gc-right">
+                        <button class="btn-apply">Apply Now</button>
+                        <div class="poster-info">
+                            <div class="poster-av" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">RC</div>
+                            <div class="poster-name">Rajesh Chandra</div>
+                            <div><span class="stars">★★★★</span><span class="rval"> 4.2</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="gc">
+                    <div class="gc-icon" style="background:#f0fdf4;border-color:#bbf7d0">💻</div>
+                    <div class="gc-body">
+                        <div class="gc-top">
+                            <div class="gc-title">Build an Attendance Tracker Web App</div>
+                            <div class="gc-budget">₹4,000</div>
+                        </div>
+                        <div class="gc-desc">React + Firebase attendance tracking app for CSE Dept. Needs an admin
+                            panel, student view, and mobile-responsive design. Firebase Auth preferred.</div>
+                        <div class="gc-meta">
+                            <span class="pill p-cat">💻 Web Development</span>
+                            <span class="pill p-open">● Open</span>
+                            <span class="pill p-dl">📅 15 Jun 2025</span>
+                            <span class="pill p-apps">👥 3 applicants</span>
+                        </div>
+                    </div>
+                    <div class="gc-right">
+                        <button class="btn-apply">Apply Now</button>
+                        <div class="poster-info">
+                            <div class="poster-av" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">PM</div>
+                            <div class="poster-name">Dr. Priya Menon</div>
+                            <div><span class="stars">★★★★★</span><span class="rval"> 4.8</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="gc">
+                    <div class="gc-icon" style="background:#fff7ed;border-color:#fed7aa">📝</div>
+                    <div class="gc-body">
+                        <div class="gc-top">
+                            <div class="gc-title">Write 3 Technical Blog Posts on AI / ML</div>
+                            <div class="gc-budget">₹900</div>
+                        </div>
+                        <div class="gc-desc">800–1,000 words each on recent AI/ML topics for the college tech
+                            newsletter. Must be SEO-friendly, plagiarism-free, and technically accurate.</div>
+                        <div class="gc-meta">
+                            <span class="pill p-cat">📝 Content Writing</span>
+                            <span class="pill p-open">● Open</span>
+                            <span class="pill p-dl">📅 10 May 2025</span>
+                            <span class="pill p-apps">👥 11 applicants</span>
+                        </div>
+                    </div>
+                    <div class="gc-right">
+                        <button class="btn-apply">Apply Now</button>
+                        <div class="poster-info">
+                            <div class="poster-av" style="background:linear-gradient(135deg,#0ea5e9,#06b6d4)">AV</div>
+                            <div class="poster-name">Anil Verma</div>
+                            <div><span class="stars">★★★★</span><span class="rval"> 4.0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="gc">
+                    <div class="gc-icon" style="background:#faf5ff;border-color:#e9d5ff">📊</div>
+                    <div class="gc-body">
+                        <div class="gc-top">
+                            <div class="gc-title">Data Analysis &amp; Dashboard — Student Survey</div>
+                            <div class="gc-budget">₹2,200</div>
+                        </div>
+                        <div class="gc-desc">Analyse 500+ survey responses using Python or Excel. Build a visual
+                            dashboard (charts + key insights report) for the academic committee presentation.</div>
+                        <div class="gc-meta">
+                            <span class="pill p-cat">📊 Data Analysis</span>
+                            <span class="pill p-open">● Open</span>
+                            <span class="pill p-dl">📅 25 May 2025</span>
+                            <span class="pill p-apps">👥 5 applicants</span>
+                        </div>
+                    </div>
+                    <div class="gc-right">
+                        <button class="btn-apply">Apply Now</button>
+                        <div class="poster-info">
+                            <div class="poster-av" style="background:linear-gradient(135deg,#22c55e,#16a34a)">SR</div>
+                            <div class="poster-name">Dr. Suresh Rao</div>
+                            <div><span class="stars">★★★★</span><span class="rval"> 4.5</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pgn">
+                    <div class="pb">‹</div>
+                    <div class="pb act">1</div>
+                    <div class="pb">2</div>
+                    <div class="pb">3</div>
+                    <div class="pb">›</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="devbar">
+        <span class="d-ok">● 200 OK</span>
+        <span class="d-t">GET /api/gigs?status=open&collegeId=GRIET</span>
+        <span class="d-t">4 results</span>
+        <span class="d-t">38 ms</span>
+    </div>
+</body>
+
+</html>
