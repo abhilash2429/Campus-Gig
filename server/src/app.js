@@ -1,5 +1,38 @@
 require("dotenv").config();
 
+/**
+ * Fail fast with readable messages (Render logs stop at "Exited with status 1"
+ * if an error is thrown deep in the require graph).
+ */
+const failBoot = (message) => {
+  console.error("[campus-gig-api]", message);
+  process.exit(1);
+};
+
+const isProduction = process.env.NODE_ENV === "production";
+const clientUrlRaw = process.env.CLIENT_URL?.trim();
+
+if (isProduction && !clientUrlRaw) {
+  failBoot(
+    "CLIENT_URL is required when NODE_ENV=production. Set it in Render → Environment to your Vercel URL (e.g. https://your-app.vercel.app).",
+  );
+}
+
+const requiredEnv = [
+  "MONGO_URI",
+  "FIREBASE_PROJECT_ID",
+  "FIREBASE_CLIENT_EMAIL",
+  "FIREBASE_PRIVATE_KEY",
+];
+
+for (const key of requiredEnv) {
+  if (!process.env[key]?.trim()) {
+    failBoot(
+      `Missing required environment variable: ${key}. Copy values from your local server/.env into Render → Environment (this app does not use JWT_SECRET).`,
+    );
+  }
+}
+
 const cors = require("cors");
 const express = require("express");
 
@@ -14,13 +47,6 @@ const paymentRoutes = require("./routes/payments");
 const portfolioRoutes = require("./routes/portfolio");
 const publicRoutes = require("./routes/public");
 const ratingRoutes = require("./routes/ratings");
-
-const isProduction = process.env.NODE_ENV === "production";
-const clientUrlRaw = process.env.CLIENT_URL?.trim();
-
-if (isProduction && !clientUrlRaw) {
-  throw new Error("CLIENT_URL must be set when NODE_ENV is production (CORS allow-list).");
-}
 
 const corsOrigin = clientUrlRaw ? clientUrlRaw.split(",").map((s) => s.trim()) : true;
 
@@ -68,16 +94,32 @@ app.use((err, _req, res, _next) => {
 });
 
 const start = async () => {
+  if (process.env.PORT) {
+    console.log("[campus-gig-api] PORT from environment:", process.env.PORT);
+  }
+
   try {
     await connectDb();
-    const port = Number(process.env.PORT || 5000);
-    app.listen(port, () => {
-      console.log(`Campus GIG API listening on port ${port}`);
-    });
   } catch (error) {
-    console.error("Failed to start server", error);
+    console.error("[campus-gig-api] MongoDB connection failed:", error.message);
+    if (
+      /timed out|ECONNREFUSED|ENOTFOUND|IP|whitelist|network|TLS/i.test(String(error.message)) ||
+      /Server selection timed out/i.test(String(error.message))
+    ) {
+      console.error(
+        "[campus-gig-api] Hint: MongoDB Atlas → Network Access → add 0.0.0.0/0 (or Render’s egress) so cloud hosts can connect.",
+      );
+    }
     process.exit(1);
+    return;
   }
+
+  const port = Number(process.env.PORT) || 5000;
+  const host = process.env.HOST || "0.0.0.0";
+
+  app.listen(port, host, () => {
+    console.log(`Campus GIG API listening on http://${host}:${port}`);
+  });
 };
 
 if (require.main === module) {

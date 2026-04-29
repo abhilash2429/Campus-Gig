@@ -78,6 +78,22 @@ Firebase Console → **Authentication** → **Settings** → **Authorized domain
 - Open `https://<service>.onrender.com/api/health` → `{"status":"ok",...}`
 - Open Vercel URL → register / login → network tab: API calls go to Render, not `localhost`.
 
+## 6. Render exits with status 1 (startup crash)
+
+This app **does not use `JWT_SECRET`** (auth is Firebase). Ignore guides that mention it.
+
+**Check Render logs** for lines starting with `[campus-gig-api]` — they name the fix.
+
+Common causes:
+
+| Symptom | Fix |
+|--------|-----|
+| `CLIENT_URL is required when NODE_ENV=production` | Set `CLIENT_URL` to your exact Vercel `https://….vercel.app`, or unset `NODE_ENV` until Vercel exists. |
+| `Missing required environment variable: …` | Add **every** key from `server/.env.example` in Render → **Environment** (not the `.env` file upload). |
+| `MongoDB connection failed` / `Server selection timed out` | Atlas → **Network Access** → allow **`0.0.0.0/0`** for demo (Render uses random IPs). |
+| `Firebase Admin failed to initialize` | `FIREBASE_PRIVATE_KEY` must include newlines as **`\n`** in the env string (same as local `.env` with quoted PEM). |
+| Wrong port | Do **not** set `PORT` in Render; Render injects it. Code uses `process.env.PORT \|\| 5000` and binds **`0.0.0.0`**. |
+
 ## Repo files
 
 - `render.yaml` — optional Render **Blueprint** (same env vars; still enter secrets in dashboard).
