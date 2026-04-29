@@ -204,8 +204,18 @@ exports.register = asyncHandler(async (req, res) => {
       approvalStatus: "approved",
     });
 
-    college.adminUserId = user._id;
-    await college.save();
+    const claimed = await College.findOneAndUpdate(
+      { _id: college._id, adminUserId: null },
+      { $set: { adminUserId: user._id } },
+      { new: true },
+    );
+
+    if (!claimed) {
+      await User.deleteOne({ _id: user._id });
+      return res.status(409).json({
+        message: "Another signup just claimed this college admin slot. Sign in with that account or contact support.",
+      });
+    }
 
     return res.status(201).json(stripSensitiveUserFields(user));
   }
@@ -252,5 +262,7 @@ exports.register = asyncHandler(async (req, res) => {
 });
 
 exports.getMe = asyncHandler(async (req, res) => {
-  res.json(req.user);
+  const plain = req.user.toObject ? req.user.toObject() : { ...req.user };
+  delete plain.firebaseUid;
+  res.json(plain);
 });

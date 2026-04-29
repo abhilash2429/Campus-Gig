@@ -29,7 +29,7 @@ export default function Portfolio() {
   const [draft, setDraft] = useState({ title: '', description: '' });
   const [error, setError] = useState('');
 
-  const isOwnPortfolio = user?._id === userId;
+  const isOwnPortfolio = user?._id != null && String(user._id) === String(userId);
 
   const loadPortfolio = async () => {
     try {

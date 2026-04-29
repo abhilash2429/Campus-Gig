@@ -1,0 +1,42 @@
+# Render Blueprint — Campus GIG API
+# Docs: https://render.com/docs/blueprint-spec
+#
+# After the service is live:
+# 1. Deploy Vercel (see DEPLOY.md), then set CLIENT_URL + NODE_ENV=production on Render.
+# 2. Add every secret below in the Render dashboard (Environment) if not using sync below.
+
+version: "1"
+services:
+  - type: web
+    name: campus-gig-api
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+      # Set after Vercel gives you https://xxx.vercel.app (comma-separate for multiple origins).
+      - key: CLIENT_URL
+        sync: false
+      # Set to production only together with CLIENT_URL (required for strict CORS).
+      - key: NODE_ENV
+        sync: false
+      # Optional: must match Storage bucket if not {FIREBASE_PROJECT_ID}.appspot.com
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false

@@ -24,7 +24,7 @@ export default function Login() {
     setError('');
     try {
       await signInWithEmailAndPassword(auth, form.email, form.password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (loginError) {
       setError(loginError.message);
     } finally {
@@ -38,7 +38,7 @@ export default function Login() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      navigate('/');
+      navigate('/dashboard');
     } catch (loginError) {
       setError(loginError.message);
     } finally {

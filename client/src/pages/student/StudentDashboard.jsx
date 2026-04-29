@@ -23,12 +23,14 @@ export default function StudentDashboard() {
     const load = async () => {
       try {
         const [gigsRes, appsRes] = await Promise.all([
-          api.get('/gigs'),
+          api.get('/gigs?limit=1'),
           api.get('/applications/my'),
         ]);
         const apps = appsRes.data || [];
+        const gigPayload = gigsRes.data;
+        const openTotal = typeof gigPayload?.total === 'number' ? gigPayload.total : 0;
         setMetrics({
-          openGigs: gigsRes.data.length,
+          openGigs: openTotal,
           applications: apps.length,
           selected: apps.filter((a) => a.status === 'selected').length,
         });

@@ -30,6 +30,11 @@ exports.getPendingUsers = asyncHandler(async (req, res) => {
 
 exports.reviewUser = asyncHandler(async (req, res) => {
   const { action, reason } = req.body;
+
+  if (!["approve", "reject"].includes(action)) {
+    return res.status(400).json({ message: "action must be approve or reject" });
+  }
+
   const user = await User.findById(req.params.id);
 
   if (!user) {
@@ -67,6 +72,11 @@ exports.getPendingGigs = asyncHandler(async (req, res) => {
 
 exports.reviewGig = asyncHandler(async (req, res) => {
   const { action } = req.body;
+
+  if (!["approve", "reject"].includes(action)) {
+    return res.status(400).json({ message: "action must be approve or reject" });
+  }
+
   const gig = await Gig.findById(req.params.id);
 
   if (!gig) {
@@ -115,6 +125,10 @@ exports.approvePayout = asyncHandler(async (req, res) => {
     payment.collegeId.toString() !== req.user.collegeId?._id?.toString()
   ) {
     return res.status(403).json({ message: "Payment not in your college" });
+  }
+
+  if (payment.status !== "payout_requested") {
+    return res.status(400).json({ message: "No payout pending for this payment" });
   }
 
   payment.status = "payout_approved";

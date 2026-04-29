@@ -20,33 +20,55 @@ export default function PaymentTrigger() {
   const navigate = useNavigate();
   const { gigId } = useParams();
   const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handlePayment = async () => {
     setLoading(true);
     setStatus('');
+    setError('');
     try {
       const scriptLoaded = await loadRazorpay();
       if (!scriptLoaded) throw new Error('Razorpay checkout could not be loaded.');
 
       const { data } = await api.post('/payments/create-order', { gigId });
 
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: data.order.amount,
-        currency: data.order.currency,
-        order_id: data.order.id,
-        handler: async (response) => {
-          await api.post('/payments/verify', { ...response, gigId });
-          setStatus('Payment verified. Gig marked complete.');
-          navigate('/client');
-        },
-      };
+      await new Promise((resolve, reject) => {
+        let finished = false;
+        const finish = () => {
+          if (!finished) {
+            finished = true;
+            resolve();
+          }
+        };
 
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: data.order.amount,
+          currency: data.order.currency,
+          order_id: data.order.id,
+          handler: async (response) => {
+            try {
+              await api.post('/payments/verify', { ...response });
+              setStatus('Payment verified. Gig marked complete.');
+              navigate('/client');
+              finish();
+            } catch (err) {
+              const msg = err.response?.data?.message || err.message || 'Verification failed';
+              setError(msg);
+              reject(err);
+            }
+          },
+          modal: {
+            ondismiss: () => finish(),
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      });
     } catch (err) {
-      setStatus(err.response?.data?.message || err.message);
+      setError((prev) => prev || err.response?.data?.message || err.message || 'Payment could not be completed.');
     } finally {
       setLoading(false);
     }
@@ -86,6 +108,12 @@ export default function PaymentTrigger() {
               <ShieldCheck className="w-4 h-4 shrink-0" />
               {status}
             </motion.div>
+          )}
+
+          {error && (
+            <div className="alert-error mb-5 text-sm" role="alert">
+              {error}
+            </div>
           )}
 
           <div className="bg-slate-50 rounded-2xl p-5 mb-5 space-y-2 text-sm">

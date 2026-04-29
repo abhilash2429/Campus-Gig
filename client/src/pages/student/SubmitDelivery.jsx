@@ -8,7 +8,12 @@ import api from '../../services/api';
 import AnimatedSection from '../../components/ui/AnimatedSection';
 import Input from '../../components/ui/Input';
 
+const MAX_DELIVERY_BYTES = 25 * 1024 * 1024;
+
 const uploadDelivery = async (file, gigId, applicationId) => {
+  if (file.size > MAX_DELIVERY_BYTES) {
+    throw new Error('Delivery file must be 25 MB or smaller.');
+  }
   const storageRef = ref(storage, `deliveries/${gigId}/${applicationId}/${file.name}`);
   await uploadBytes(storageRef, file);
   return getDownloadURL(storageRef);
@@ -43,6 +48,10 @@ export default function SubmitDelivery() {
     event.preventDefault();
     if (!file || !application?.gigId?._id) {
       setError('Choose a delivery file before submitting.');
+      return;
+    }
+    if (file.size > MAX_DELIVERY_BYTES) {
+      setError('Delivery file must be 25 MB or smaller.');
       return;
     }
     setSubmitting(true);

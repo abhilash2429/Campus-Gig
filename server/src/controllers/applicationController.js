@@ -1,6 +1,15 @@
+const mongoose = require("mongoose");
 const Application = require("../models/Application");
 const Gig = require("../models/Gig");
 const asyncHandler = require("../utils/asyncHandler");
+const { isFirebaseStorageDownloadUrl } = require("../utils/firebaseStorageUrl");
+
+const parsePagination = (req) => {
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
+  const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+  const skip = (page - 1) * limit;
+  return { limit, page, skip };
+};
 
 exports.applyToGig = asyncHandler(async (req, res) => {
   const gig = await Gig.findById(req.params.gigId);
@@ -11,6 +20,10 @@ exports.applyToGig = asyncHandler(async (req, res) => {
 
   if (req.user.role !== "student") {
     return res.status(403).json({ message: "Only students can apply" });
+  }
+
+  if (gig.postedBy.toString() === req.user._id.toString()) {
+    return res.status(403).json({ message: "You cannot apply to your own gig" });
   }
 
   if (!req.user.collegeId || gig.collegeId.toString() !== req.user.collegeId._id.toString()) {
@@ -45,12 +58,20 @@ exports.getApplicantsForGig = asyncHandler(async (req, res) => {
     return res.status(403).json({ message: "Not gig owner" });
   }
 
-  const applications = await Application.find({ gigId: gig._id }).populate(
-    "studentId",
-    "name email ratings portfolioItems collegeId",
-  );
+  const { limit, page, skip } = parsePagination(req);
 
-  res.json(applications);
+  const filter = { gigId: gig._id };
+
+  const [applications, total] = await Promise.all([
+    Application.find(filter)
+      .populate("studentId", "name email ratings portfolioItems collegeId")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Application.countDocuments(filter),
+  ]);
+
+  res.json({ applications, total, page, limit });
 });
 
 exports.getApplicationById = asyncHandler(async (req, res) => {
@@ -77,37 +98,80 @@ exports.getApplicationById = asyncHandler(async (req, res) => {
 });
 
 exports.selectApplicant = asyncHandler(async (req, res) => {
-  const application = await Application.findById(req.params.id).populate("gigId");
+  const session = await mongoose.startSession();
 
-  if (!application) {
-    return res.status(404).json({ message: "Application not found" });
+  try {
+    let applicationId;
+    let gigId;
+
+    await session.withTransaction(async () => {
+      const application = await Application.findById(req.params.id).session(session);
+      if (!application) {
+        const err = new Error("Application not found");
+        err.statusCode = 404;
+        throw err;
+      }
+
+      const gig = await Gig.findById(application.gigId).session(session);
+      if (!gig) {
+        const err = new Error("Gig not found");
+        err.statusCode = 404;
+        throw err;
+      }
+
+      if (gig.postedBy.toString() !== req.user._id.toString()) {
+        const err = new Error("Not gig owner");
+        err.statusCode = 403;
+        throw err;
+      }
+
+      if (gig.status !== "open") {
+        const err = new Error("Gig is not open for selection");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      if (!["applied", "shortlisted"].includes(application.status)) {
+        const err = new Error("This application cannot be selected");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      await Application.updateMany(
+        { gigId: gig._id, _id: { $ne: application._id } },
+        { status: "rejected" },
+        { session },
+      );
+
+      application.status = "selected";
+      await application.save({ session });
+
+      gig.status = "in_progress";
+      gig.selectedApplicantId = application.studentId;
+      await gig.save({ session });
+
+      applicationId = application._id;
+      gigId = gig._id;
+    });
+
+    const [application, gig] = await Promise.all([
+      Application.findById(applicationId).populate("gigId"),
+      Gig.findById(gigId),
+    ]);
+
+    res.json({ application, gig });
+  } finally {
+    await session.endSession();
   }
-
-  const gig = application.gigId;
-  if (gig.postedBy.toString() !== req.user._id.toString()) {
-    return res.status(403).json({ message: "Not gig owner" });
-  }
-
-  if (gig.status !== "open") {
-    return res.status(400).json({ message: "Gig is not open for selection" });
-  }
-
-  await Application.updateMany(
-    { gigId: gig._id, _id: { $ne: application._id } },
-    { status: "rejected" },
-  );
-
-  application.status = "selected";
-  await application.save();
-
-  gig.status = "in_progress";
-  gig.selectedApplicantId = application.studentId;
-  await gig.save();
-
-  res.json({ application, gig });
 });
 
 exports.submitDelivery = asyncHandler(async (req, res) => {
+  const { deliveryFileUrl, deliveryNote } = req.body;
+
+  if (!deliveryFileUrl || !isFirebaseStorageDownloadUrl(deliveryFileUrl)) {
+    return res.status(400).json({ message: "Delivery file must be a valid Firebase Storage URL for this project" });
+  }
+
   const application = await Application.findById(req.params.id).populate("gigId");
 
   if (!application) {
@@ -126,8 +190,8 @@ exports.submitDelivery = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Gig is not in progress" });
   }
 
-  application.deliveryFileUrl = req.body.deliveryFileUrl;
-  application.deliveryNote = req.body.deliveryNote;
+  application.deliveryFileUrl = deliveryFileUrl;
+  application.deliveryNote = deliveryNote;
   application.deliverySubmittedAt = new Date();
   await application.save();
 

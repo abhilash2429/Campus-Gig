@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, ExternalLink, UserCheck, Bookmark, BookmarkCheck, Users, CheckCircle, XCircle } from 'lucide-react';
-import api from '../../services/api';
+import api, { applicationsFromResponse } from '../../services/api';
 import Badge from '../../components/ui/Badge';
 import AnimatedSection from '../../components/ui/AnimatedSection';
 
@@ -16,8 +16,8 @@ export default function ManageApplicants() {
   const loadApplicants = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/applications/gig/${gigId}`);
-      setApplications(res.data);
+      const res = await api.get(`/applications/gig/${gigId}`, { params: { limit: 100 } });
+      setApplications(applicationsFromResponse(res.data));
       setError('');
     } catch (err) {
       setError(err.response?.data?.message || 'Could not load applicants.');

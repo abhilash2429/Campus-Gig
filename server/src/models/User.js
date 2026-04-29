@@ -21,6 +21,11 @@ const UserSchema = new mongoose.Schema(
       enum: ["student", "client", "faculty", "college_admin", "super_admin"],
       required: true,
     },
+    /** Role to restore when demoted from college_admin (super-admin redesignation). */
+    preCollegeAdminRole: {
+      type: String,
+      default: null,
+    },
     collegeId: { type: mongoose.Schema.Types.ObjectId, ref: "College", default: null },
     clientProfile: {
       affiliationType: {

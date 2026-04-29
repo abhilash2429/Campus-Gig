@@ -10,6 +10,8 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+const FINAL_PAYMENT_STATUSES = ["payout_requested", "payout_approved", "payout_done"];
+
 exports.createOrder = asyncHandler(async (req, res) => {
   const { gigId } = req.body;
 
@@ -54,7 +56,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
 });
 
 exports.verifyPayment = asyncHandler(async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, gigId } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
   const body = `${razorpay_order_id}|${razorpay_payment_id}`;
   const expectedSignature = crypto
@@ -75,13 +77,30 @@ exports.verifyPayment = asyncHandler(async (req, res) => {
     return res.status(403).json({ message: "You cannot verify another client's payment" });
   }
 
+  if (FINAL_PAYMENT_STATUSES.includes(payment.status)) {
+    const gig = await Gig.findById(payment.gigId);
+    return res.status(200).json({
+      message: "Payment already verified",
+      payment,
+      gig,
+    });
+  }
+
   payment.razorpayPaymentId = razorpay_payment_id;
   payment.status = "payout_requested";
   await payment.save();
 
-  const gig = await Gig.findById(gigId);
+  const gig = await Gig.findById(payment.gigId);
   if (!gig) {
     return res.status(404).json({ message: "Gig not found" });
+  }
+
+  if (gig.postedBy.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: "Gig does not belong to this payment" });
+  }
+
+  if (gig.status !== "pending_delivery") {
+    return res.status(400).json({ message: "Gig is not awaiting payment for this order" });
   }
 
   gig.status = "completed";

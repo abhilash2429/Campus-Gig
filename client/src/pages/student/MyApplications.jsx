@@ -110,6 +110,16 @@ export default function MyApplications() {
                   Submit Delivery <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               )}
+              {app.status === 'selected' && app.gigId?.status === 'pending_delivery' && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                  Delivery submitted — waiting for the client to review and pay.
+                </p>
+              )}
+              {app.status === 'selected' && app.gigId?.status === 'completed' && (
+                <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                  Gig completed. Check your portfolio; post-payment ratings are not available in the app UI yet.
+                </p>
+              )}
             </motion.article>
           ))}
         </div>

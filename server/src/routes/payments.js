@@ -7,11 +7,12 @@ const {
 } = require("../controllers/paymentController");
 const { protect, requireApproved } = require("../middleware/auth");
 const { allowRoles } = require("../middleware/roles");
+const { paymentLimiter } = require("../middleware/rateLimits");
 
 const router = express.Router();
 
-router.post("/create-order", protect, requireApproved, createOrder);
-router.post("/verify", protect, requireApproved, verifyPayment);
+router.post("/create-order", paymentLimiter, protect, requireApproved, createOrder);
+router.post("/verify", paymentLimiter, protect, requireApproved, verifyPayment);
 router.get(
   "/college",
   protect,

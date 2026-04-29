@@ -68,8 +68,14 @@ exports.updateCollege = asyncHandler(async (req, res) => {
     const newAdminEmail = designatedAdminEmail.toLowerCase().trim();
 
     if (college.adminUserId) {
+      const prev = await User.findById(college.adminUserId);
+      const restoreRole =
+        prev?.preCollegeAdminRole && ["student", "faculty"].includes(prev.preCollegeAdminRole)
+          ? prev.preCollegeAdminRole
+          : "student";
       await User.findByIdAndUpdate(college.adminUserId, {
-        role: "student",
+        role: restoreRole,
+        preCollegeAdminRole: null,
         approvalStatus: "approved",
       });
       college.adminUserId = null;
@@ -79,6 +85,9 @@ exports.updateCollege = asyncHandler(async (req, res) => {
 
     const existingUser = await User.findOne({ email: newAdminEmail });
     if (existingUser) {
+      existingUser.preCollegeAdminRole = ["student", "faculty"].includes(existingUser.role)
+        ? existingUser.role
+        : "student";
       existingUser.role = "college_admin";
       existingUser.approvalStatus = "approved";
       existingUser.collegeId = college._id;

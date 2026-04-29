@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Briefcase, Clock, DollarSign, Users, ArrowRight, TrendingUp } from 'lucide-react';
-import api from '../../services/api';
+import api, { gigsFromResponse } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import Badge from '../../components/ui/Badge';
 import AnimatedSection from '../../components/ui/AnimatedSection';
@@ -18,14 +18,18 @@ const itemVariants = {
 
 export default function ClientDashboard() {
   const [gigs, setGigs] = useState([]);
+  const [gigTotal, setGigTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await api.get('/gigs');
-        setGigs(res.data);
+        const res = await api.get('/gigs?limit=100');
+        const payload = res.data;
+        const list = gigsFromResponse(payload);
+        setGigs(list);
+        setGigTotal(typeof payload?.total === 'number' ? payload.total : list.length);
         setError('');
       } catch (err) {
         setError(err.response?.data?.message || 'Could not load your gigs.');
@@ -40,7 +44,7 @@ export default function ClientDashboard() {
 
   const statCards = [
     {
-      icon: Briefcase, label: 'Total Gigs', value: gigs.length,
+      icon: Briefcase, label: 'Total Gigs', value: gigTotal,
       desc: 'Everything posted so far', color: 'text-primary-500', bg: 'bg-primary-50',
     },
     {

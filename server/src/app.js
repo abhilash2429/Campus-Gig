@@ -1,5 +1,4 @@
-const dotenv = require("dotenv");
-dotenv.config();
+require("dotenv").config();
 
 const cors = require("cors");
 const express = require("express");
@@ -10,20 +9,32 @@ const adminSuperRoutes = require("./routes/adminSuper");
 const applicationRoutes = require("./routes/applications");
 const authRoutes = require("./routes/auth");
 const gigRoutes = require("./routes/gigs");
+const { apiLimiter } = require("./middleware/rateLimits");
 const paymentRoutes = require("./routes/payments");
 const portfolioRoutes = require("./routes/portfolio");
 const publicRoutes = require("./routes/public");
 const ratingRoutes = require("./routes/ratings");
 
+const isProduction = process.env.NODE_ENV === "production";
+const clientUrlRaw = process.env.CLIENT_URL?.trim();
+
+if (isProduction && !clientUrlRaw) {
+  throw new Error("CLIENT_URL must be set when NODE_ENV is production (CORS allow-list).");
+}
+
+const corsOrigin = clientUrlRaw ? clientUrlRaw.split(",").map((s) => s.trim()) : true;
+
 const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || true,
+    origin: corsOrigin,
     credentials: true,
   }),
 );
 app.use(express.json({ limit: "2mb" }));
+
+app.use("/api", apiLimiter);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", service: "campus-gig-server" });
@@ -45,6 +56,10 @@ app.use((req, res) => {
 
 app.use((err, _req, res, _next) => {
   console.error(err);
+
+  if (err.name === "CastError") {
+    return res.status(404).json({ message: "Invalid or unknown resource id" });
+  }
 
   const status = err.statusCode || 500;
   const message = err.message || "Internal server error";

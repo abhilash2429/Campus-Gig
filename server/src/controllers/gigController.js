@@ -1,7 +1,19 @@
 const asyncHandler = require("../utils/asyncHandler");
+const College = require("../models/College");
 const Gig = require("../models/Gig");
 
+const parsePagination = (req) => {
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
+  const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+  const skip = (page - 1) * limit;
+  return { limit, page, skip };
+};
+
 exports.createGig = asyncHandler(async (req, res) => {
+  if (!["client", "faculty", "college_admin"].includes(req.user.role)) {
+    return res.status(403).json({ message: "Only clients, faculty, or college admins can post gigs" });
+  }
+
   const { title, description, category, budget, deadline, targetCollegeId } = req.body;
 
   const collegeId = req.user.collegeId ? req.user.collegeId._id : targetCollegeId;
@@ -10,9 +22,14 @@ exports.createGig = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "External clients must specify a targetCollegeId" });
   }
 
+  const college = await College.findById(collegeId);
+  if (!college) {
+    return res.status(404).json({ message: "College not found" });
+  }
+
   const gigData = {
     postedBy: req.user._id,
-    collegeId,
+    collegeId: college._id,
     title,
     description,
     category,
@@ -27,10 +44,14 @@ exports.createGig = asyncHandler(async (req, res) => {
 
 exports.getGigs = asyncHandler(async (req, res) => {
   const { category, status } = req.query;
+  const { limit, page, skip } = parsePagination(req);
   const filter = {};
 
   if (req.user.role === "student") {
-    filter.collegeId = req.user.collegeId?._id;
+    if (!req.user.collegeId?._id) {
+      return res.status(403).json({ message: "Your profile is not linked to a college" });
+    }
+    filter.collegeId = req.user.collegeId._id;
     filter.status = "open";
   }
 
@@ -42,7 +63,10 @@ exports.getGigs = asyncHandler(async (req, res) => {
   }
 
   if (req.user.role === "college_admin") {
-    filter.collegeId = req.user.collegeId?._id;
+    if (!req.user.collegeId?._id) {
+      return res.status(403).json({ message: "Your profile is not linked to a college" });
+    }
+    filter.collegeId = req.user.collegeId._id;
     if (status) {
       filter.status = status;
     }
@@ -56,12 +80,17 @@ exports.getGigs = asyncHandler(async (req, res) => {
     filter.category = category;
   }
 
-  const gigs = await Gig.find(filter)
-    .populate("postedBy", "name email role ratings")
-    .populate("collegeId", "name emailDomain")
-    .sort({ createdAt: -1 });
+  const [gigs, total] = await Promise.all([
+    Gig.find(filter)
+      .populate("postedBy", "name email role ratings")
+      .populate("collegeId", "name emailDomain")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Gig.countDocuments(filter),
+  ]);
 
-  res.json(gigs);
+  res.json({ gigs, total, page, limit });
 });
 
 exports.getGigById = asyncHandler(async (req, res) => {

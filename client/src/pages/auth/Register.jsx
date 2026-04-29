@@ -153,7 +153,7 @@ export default function Register() {
       const idProofUrl = await uploadClientProof(credential.user);
       await registerWithBackend(token, buildRegisterPayload({ idProofUrl }));
       await refreshProfile();
-      navigate('/');
+      navigate('/dashboard');
     } catch (registerError) {
       setError(registerError.response?.data?.message || registerError.message);
     } finally {
@@ -178,7 +178,7 @@ export default function Register() {
         name: form.name || credential.user.displayName || 'External Client',
       });
       await refreshProfile();
-      navigate('/');
+      navigate('/dashboard');
     } catch (registerError) {
       setError(registerError.response?.data?.message || registerError.message);
     } finally {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, Star, Clock, DollarSign, X, Send, Tag } from 'lucide-react';
-import api from '../../services/api';
+import api, { gigsFromResponse } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import Badge from '../../components/ui/Badge';
 import AnimatedSection from '../../components/ui/AnimatedSection';
@@ -22,10 +22,10 @@ export default function BrowseGigs() {
     setError('');
     try {
       const [gigsRes, appsRes] = await Promise.all([
-        api.get('/gigs'),
+        api.get('/gigs?limit=100'),
         api.get('/applications/my'),
       ]);
-      setGigs(gigsRes.data);
+      setGigs(gigsFromResponse(gigsRes.data));
       setApplications(appsRes.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to load gigs right now.');
