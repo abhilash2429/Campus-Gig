@@ -1,11 +1,22 @@
 import axios from "axios";
 import { auth } from "../firebase/config";
 
+const rawBase = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, "") || "";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: rawBase || undefined,
+  timeout: 120000,
 });
 
 api.interceptors.request.use(async (config) => {
+  if (!rawBase) {
+    return Promise.reject(
+      new Error(
+        "VITE_API_BASE_URL is not set. In Vercel → Settings → Environment Variables add it (e.g. https://your-api.onrender.com/api), then redeploy.",
+      ),
+    );
+  }
+
   config.headers = config.headers || {};
 
   const currentUser = auth.currentUser;

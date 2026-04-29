@@ -61,8 +61,17 @@ You get **no custom domain**: `https://<app>.vercel.app` and `https://<service>.
 
 On Render → your service → **Environment**:
 
-- `CLIENT_URL` = `https://<your-vercel-url>.vercel.app` (exact browser origin)
+- `CLIENT_URL` = `https://<your-vercel-url>.vercel.app` (exact browser origin — copy from address bar, **no trailing slash**)
 - `NODE_ENV` = `production`
+
+**Super admin sign-in “network error”** is usually **CORS**: the tab’s URL must be allowed. If you use a **different** Vercel URL (e.g. preview: `your-app-git-main-xxx.vercel.app`) than the one in `CLIENT_URL`, the browser blocks `/auth/me` and Axios reports a network error.
+
+Fix one of:
+
+- Put the **exact** preview URL in `CLIENT_URL` (comma-separate multiple origins), **or**
+- Set **`CORS_ALLOW_VERCEL=true`** on Render to allow any `https://*.vercel.app` (fine for demos; tighten for real production).
+
+Also set **`SUPER_ADMIN_EMAIL`** on Render to the **same** email you use in Firebase (case-insensitive). Otherwise `/auth/me` returns 404 after Firebase login (not a network error, but confusing).
 
 Save → **Manual Deploy** → **Clear build cache & deploy** (optional if only env changed).
 
@@ -92,6 +101,8 @@ Common causes:
 | `Missing required environment variable: …` | Add **every** key from `server/.env.example` in Render → **Environment** (not the `.env` file upload). |
 | `MongoDB connection failed` / `Server selection timed out` | Atlas → **Network Access** → allow **`0.0.0.0/0`** for demo (Render uses random IPs). |
 | `Firebase Admin failed to initialize` | `FIREBASE_PRIVATE_KEY` must include newlines as **`\n`** in the env string (same as local `.env` with quoted PEM). |
+| Browser “network error” after Firebase login | Almost always **CORS**: `CLIENT_URL` on Render must **exactly** match the tab’s origin. Previews → `CORS_ALLOW_VERCEL=true` or list each URL in `CLIENT_URL`. |
+| Super admin stuck after login | Set **`SUPER_ADMIN_EMAIL`** on Render to match the Firebase login email. Check **Network** tab: 404 on `/auth/me` means Mongo/bootstrap mismatch, not CORS. |
 | Wrong port | Do **not** set `PORT` in Render; Render injects it. Code uses `process.env.PORT \|\| 5000` and binds **`0.0.0.0`**. |
 
 ## Repo files

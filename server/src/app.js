@@ -48,16 +48,45 @@ const portfolioRoutes = require("./routes/portfolio");
 const publicRoutes = require("./routes/public");
 const ratingRoutes = require("./routes/ratings");
 
-const corsOrigin = clientUrlRaw ? clientUrlRaw.split(",").map((s) => s.trim()) : true;
+/** Exact browser origins allowed when NODE_ENV=production (comma-separated). */
+const corsAllowList = clientUrlRaw
+  ? clientUrlRaw.split(",").map((s) => s.trim()).filter(Boolean)
+  : [];
+
+/** Demo / previews: allow any https://*.vercel.app when CLIENT_URL alone is not enough. */
+const corsAllowVercel =
+  process.env.CORS_ALLOW_VERCEL === "true" || process.env.CORS_ALLOW_VERCEL === "1";
 
 const app = express();
 
-app.use(
-  cors({
-    origin: corsOrigin,
-    credentials: true,
-  }),
-);
+const corsOptions =
+  !isProduction || corsAllowList.length === 0
+    ? { origin: true, credentials: true }
+    : {
+        credentials: true,
+        origin(origin, callback) {
+          if (!origin) {
+            return callback(null, true);
+          }
+          if (corsAllowList.includes(origin)) {
+            return callback(null, true);
+          }
+          if (corsAllowVercel) {
+            try {
+              const { hostname, protocol } = new URL(origin);
+              if (protocol === "https:" && hostname.endsWith(".vercel.app")) {
+                return callback(null, true);
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+          console.warn("[cors] blocked origin:", origin, "| allowed:", corsAllowList);
+          return callback(null, false);
+        },
+      };
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "2mb" }));
 
 app.use("/api", apiLimiter);

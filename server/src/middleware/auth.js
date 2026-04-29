@@ -1,4 +1,5 @@
 const admin = require("../config/firebase");
+const College = require("../models/College");
 const User = require("../models/User");
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -54,6 +55,45 @@ const protect = asyncHandler(async (req, res, next) => {
           });
 
           user = await User.findById(user._id).select("+firebaseUid").populate("collegeId");
+        }
+      }
+    }
+
+    // Bootstrap designated college admin on first login when the Firebase account
+    // exists but MongoDB has no user (e.g. they used Sign in only, or registration
+    // failed before the college was onboarded).
+    if (!user && decoded.email) {
+      const normalizedEmail = decoded.email.toLowerCase().trim();
+      const domain = normalizedEmail.split("@")[1];
+
+      if (domain) {
+        const college = await College.findOne({ emailDomain: domain });
+
+        if (
+          college &&
+          college.designatedAdminEmail === normalizedEmail &&
+          college.adminUserId == null
+        ) {
+          const candidate = await User.create({
+            firebaseUid: decoded.uid,
+            name: decoded.name || normalizedEmail.split("@")[0],
+            email: normalizedEmail,
+            role: "college_admin",
+            collegeId: college._id,
+            approvalStatus: "approved",
+          });
+
+          const claimed = await College.findOneAndUpdate(
+            { _id: college._id, adminUserId: null },
+            { $set: { adminUserId: candidate._id } },
+            { new: true },
+          );
+
+          if (!claimed) {
+            await User.deleteOne({ _id: candidate._id });
+          } else {
+            user = await User.findById(candidate._id).select("+firebaseUid").populate("collegeId");
+          }
         }
       }
     }

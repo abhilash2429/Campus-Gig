@@ -37,6 +37,6 @@ services:
       # Set to production only together with CLIENT_URL (required for strict CORS).
       - key: NODE_ENV
         sync: false
-      # Optional: must match Storage bucket if not {FIREBASE_PROJECT_ID}.appspot.com
-      - key: FIREBASE_STORAGE_BUCKET
+      # Optional demo: allow https://*.vercel.app if CLIENT_URL doesn't list every preview URL
+      - key: CORS_ALLOW_VERCEL
         sync: false

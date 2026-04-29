@@ -19,6 +19,45 @@ export default function PrivateRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
+  if (profileIssue?.type === "api_unreachable") {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <section className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+          <div className="bg-slate-900 px-8 py-8 text-white">
+            <p className="uppercase tracking-[0.2em] text-xs text-white/50 font-semibold">Connection</p>
+            <h1 className="text-2xl font-bold mt-2">{profileIssue.title}</h1>
+            <p className="text-white/75 mt-3 text-sm leading-relaxed">{profileIssue.message}</p>
+          </div>
+          <div className="p-8 space-y-4 text-sm text-slate-600">
+            <p className="font-semibold text-slate-800">Quick checks</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>
+                Render → <strong>CLIENT_URL</strong> must match this site exactly (origin from address bar, no trailing slash).
+              </li>
+              <li>
+                Vercel preview deployments: set <strong>CORS_ALLOW_VERCEL=true</strong> on Render, or add each preview URL to CLIENT_URL (comma-separated).
+              </li>
+              <li>
+                Vercel → <strong>VITE_API_BASE_URL</strong> = <code className="bg-slate-100 px-1 rounded text-xs">https://your-service.onrender.com/api</code> then redeploy.
+              </li>
+              <li>
+                Wake the API: open your Render service <code className="bg-slate-100 px-1 rounded text-xs">/api/health</code> and wait ~60s if the free tier was asleep.
+              </li>
+            </ul>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button className="btn-primary" type="button" onClick={() => globalThis.location.reload()}>
+                Retry
+              </button>
+              <button className="btn-secondary" type="button" onClick={logout}>
+                Sign out
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   if (profileIssue?.type === "missing_profile") {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -40,16 +79,18 @@ export default function PrivateRoute({ children }) {
 
           <div className="p-8 md:p-10">
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-              Student and faculty sign-ins only work when the email domain already exists as a
-              registered college in Campus GIG. For example, a user from an unregistered college
-              should not continue into the app until that college is created by the super admin.
+              Students and faculty need their college domain registered first. If you are the
+              designated college admin, the registry must list your exact email and matching email
+              domain, and you still need a MongoDB profile—use Register once or sign in again after
+              the API is updated (first login can auto-create the admin profile when the slot is
+              open).
             </div>
 
             <div className="mt-6 space-y-3 text-slate-600">
               <p>What to do next:</p>
-              <p>1. Ask the super admin to add your college domain in the College Registry.</p>
-              <p>2. Sign out and register again after the college is onboarded.</p>
-              <p>3. If you meant to join as an external client, use the Google client flow instead.</p>
+              <p>1. Open Register (not only Login), enter the same email and password, and submit—this creates the campus profile if Firebase already exists.</p>
+              <p>2. Super admin: verify the college row’s email domain matches the part after @ in the user’s address, and that Designated admin exactly matches their email; reset the admin slot only if the wrong person claimed it.</p>
+              <p>3. If you meant to join as an external client, use the Client role and Google or email flow with ID proof.</p>
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3">

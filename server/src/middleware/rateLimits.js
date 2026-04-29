@@ -6,6 +6,7 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many requests from this IP, please try again later." },
+  skip: (req) => req.method === "OPTIONS",
 });
 
 const registerLimiter = rateLimit({

@@ -33,7 +33,18 @@ export const AuthProvider = ({ children }) => {
           type: "missing_profile",
           title: "This account is not linked to a Campus GIG profile yet.",
           message:
-            "If you used a college email from an unregistered college, your sign-in worked in Firebase but the campus account was never created in the app.",
+            "Firebase signed you in, but this account has no profile in the app database yet. Usual fixes: (1) Use the Register page once with the same email and password (it completes MongoDB signup even if Firebase already exists). (2) Designated college admin: in Super Admin → College Registry, the college’s email domain must match your address (e.g. user@grietcollege.com requires domain grietcollege.com), and Designated admin must be exactly this email with the admin slot still empty. (3) Confirm the API on Render uses the same MongoDB where the college was created. (4) Super admin accounts need SUPER_ADMIN_EMAIL on the server to match this email.",
+        });
+        return null;
+      }
+
+      if (!error.response) {
+        setUser(null);
+        setProfileIssue({
+          type: "api_unreachable",
+          title: "Cannot reach the API (browser “network error”)",
+          message:
+            "This is almost always CORS or a wrong API URL. On Render, set CLIENT_URL to this exact page origin (copy from the address bar, e.g. https://your-app.vercel.app). If you use Vercel preview links, add CORS_ALLOW_VERCEL=true on Render or list each preview URL in CLIENT_URL (comma-separated). Open your Render /api/health URL first to wake the service, then retry.",
         });
         return null;
       }
