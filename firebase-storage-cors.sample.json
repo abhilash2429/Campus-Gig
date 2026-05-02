@@ -1,0 +1,28 @@
+[
+  {
+    "origin": ["http://localhost:5173"],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "Content-Length",
+      "x-goog-resumable",
+      "x-goog-upload-url",
+      "x-goog-meta-*"
+    ]
+  },
+  {
+    "origin": ["https://campus-gig-client.vercel.app"],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "Content-Length",
+      "x-goog-resumable",
+      "x-goog-upload-url",
+      "x-goog-meta-*"
+    ]
+  }
+]

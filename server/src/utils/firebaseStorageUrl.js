@@ -1,3 +1,24 @@
+const MAX_DELIVERY_URL_LENGTH = 4096;
+
+function isGenericHttpsUrl(urlString) {
+  if (!urlString || typeof urlString !== "string" || urlString.length > MAX_DELIVERY_URL_LENGTH) {
+    return false;
+  }
+
+  let url;
+  try {
+    url = new URL(urlString.trim());
+  } catch {
+    return false;
+  }
+
+  if (url.protocol !== "https:" || !url.hostname) {
+    return false;
+  }
+
+  return true;
+}
+
 /**
  * Validates that a URL is an https Firebase Storage download URL for this project bucket.
  */
@@ -38,4 +59,24 @@ function isFirebaseStorageDownloadUrl(urlString) {
   return bucketInUrl === expectedBucket;
 }
 
-module.exports = { isFirebaseStorageDownloadUrl };
+/**
+ * Firebase Storage URLs are required by default. Set ALLOW_NON_FIREBASE_DELIVERY_URLS=true to accept
+ * any https URL (demo / staging only — do not enable in production unless you trust submitters).
+ */
+function isAllowedDeliveryFileUrl(urlString) {
+  if (isFirebaseStorageDownloadUrl(urlString)) {
+    return true;
+  }
+
+  const allowNonFirebase =
+    process.env.ALLOW_NON_FIREBASE_DELIVERY_URLS === "true" ||
+    process.env.ALLOW_NON_FIREBASE_DELIVERY_URLS === "1";
+
+  if (!allowNonFirebase) {
+    return false;
+  }
+
+  return isGenericHttpsUrl(urlString);
+}
+
+module.exports = { isFirebaseStorageDownloadUrl, isAllowedDeliveryFileUrl };

@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Application = require("../models/Application");
 const Gig = require("../models/Gig");
 const asyncHandler = require("../utils/asyncHandler");
-const { isFirebaseStorageDownloadUrl } = require("../utils/firebaseStorageUrl");
+const { isAllowedDeliveryFileUrl } = require("../utils/firebaseStorageUrl");
 
 const parsePagination = (req) => {
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
@@ -168,8 +168,14 @@ exports.selectApplicant = asyncHandler(async (req, res) => {
 exports.submitDelivery = asyncHandler(async (req, res) => {
   const { deliveryFileUrl, deliveryNote } = req.body;
 
-  if (!deliveryFileUrl || !isFirebaseStorageDownloadUrl(deliveryFileUrl)) {
-    return res.status(400).json({ message: "Delivery file must be a valid Firebase Storage URL for this project" });
+  if (!deliveryFileUrl || !isAllowedDeliveryFileUrl(deliveryFileUrl)) {
+    return res.status(400).json({
+      message:
+        process.env.ALLOW_NON_FIREBASE_DELIVERY_URLS === "true" ||
+        process.env.ALLOW_NON_FIREBASE_DELIVERY_URLS === "1"
+          ? "Delivery file must be a valid https URL"
+          : "Delivery file must be a valid Firebase Storage URL for this project",
+    });
   }
 
   const application = await Application.findById(req.params.id).populate("gigId");
